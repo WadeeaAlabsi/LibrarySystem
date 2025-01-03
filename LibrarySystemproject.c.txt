@@ -1,0 +1,258 @@
+#include <stdio.h>
+#include <string.h>
+
+#define MAX_KITAPLAR 100
+#define MAX_ODUNC 50
+
+typedef struct {
+    char isim[50];
+    char yazar[50];
+    int yil;
+    int mevcut;
+} Kitap;
+
+typedef struct {
+    char kitapIsmi[50];
+    char geriDonusTarihi[15];
+} OduncKitap;
+
+Kitap kitaplar[MAX_KITAPLAR];
+int kitapSayisi = 0;
+
+OduncKitap oduncKitaplar[MAX_ODUNC];
+int oduncSayisi = 0;
+
+const char* kitaplarDosyaYolu = "kitaplar.txt";
+
+int yetkiliGirisi() {
+    const char dogruKullaniciAdi[] = "admin";
+    const char dogruSifre[] = "1234";
+    char kullaniciAdi[50];
+    char sifre[50];
+
+    printf("Kullanıcı Adı: ");
+    scanf("%s", kullaniciAdi);
+    printf("Şifre: ");
+    scanf("%s", sifre);
+
+    if (strcmp(kullaniciAdi, dogruKullaniciAdi) == 0 && strcmp(sifre, dogruSifre) == 0) {
+        printf("\nGiriş başarılı! Hoş geldiniz.\n");
+        return 1;
+    } else {
+        printf("\nHatalı kullanıcı adı veya şifre.\n");
+        return 0;
+    }
+}
+
+void kitaplariKaydet() {
+    FILE *dosya = fopen(kitaplarDosyaYolu, "w");
+    if (dosya == NULL) {
+        printf("\nKitaplar dosyasına yazılamadı.\n");
+        return;
+    }
+
+    for (int i = 0; i < kitapSayisi; i++) {
+        fprintf(dosya, "%s,%s,%d,%d\n", kitaplar[i].isim, kitaplar[i].yazar, kitaplar[i].yil, kitaplar[i].mevcut);
+    }
+    fclose(dosya);
+    printf("\nKitaplar başarıyla kaydedildi.\n");
+}
+
+void kitaplariYukle() {
+    FILE *dosya = fopen(kitaplarDosyaYolu, "r");
+    if (dosya == NULL) {
+        printf("\nKitaplar dosyası bulunamadı. Yeni dosya oluşturulacak.\n");
+        return;
+    }
+
+    while (fscanf(dosya, " %[^,],%[^,],%d,%d\n", kitaplar[kitapSayisi].isim, kitaplar[kitapSayisi].yazar, 
+                  &kitaplar[kitapSayisi].yil, &kitaplar[kitapSayisi].mevcut) != EOF) {
+        kitapSayisi++;
+    }
+    fclose(dosya);
+    printf("\nKitaplar başarıyla yüklendi.\n");
+}
+
+void kitapEkle() {
+    if (kitapSayisi >= MAX_KITAPLAR) {
+        printf("\nMaksimum kitap sayısına ulaşıldı!\n");
+        return;
+    }
+
+    printf("\nYeni Kitap Ekle\n");
+    printf("Kitap İsmi: ");
+    scanf(" %[^
+]", kitaplar[kitapSayisi].isim);
+    printf("Yazar: ");
+    scanf(" %[^
+]", kitaplar[kitapSayisi].yazar);
+    printf("Yayın Yılı: ");
+    scanf("%d", &kitaplar[kitapSayisi].yil);
+
+    kitaplar[kitapSayisi].mevcut = 1;
+    kitapSayisi++;
+    printf("\nKitap başarıyla eklendi!\n");
+}
+
+void kitaplariListele() {
+    if (kitapSayisi == 0) {
+        printf("\nHenüz kitap eklenmedi.\n");
+        return;
+    }
+
+    printf("\nKayıtlı Kitaplar:\n");
+    for (int i = 0; i < kitapSayisi; i++) {
+        printf("%d. Kitap\n", i + 1);
+        printf("İsim: %s\n", kitaplar[i].isim);
+        printf("Yazar: %s\n", kitaplar[i].yazar);
+        printf("Yayın Yılı: %d\n", kitaplar[i].yil);
+        printf("Durum: %s\n", kitaplar[i].mevcut ? "Mevcut" : "Odunc Verildi");
+        printf("------------------\n");
+    }
+}
+
+void kitapAra() {
+    char aranan[50];
+    printf("\nAramak istediğiniz kitabın ismini girin: ");
+    scanf(" %[^
+]", aranan);
+
+    int bulundu = 0;
+    for (int i = 0; i < kitapSayisi; i++) {
+        if (strcmp(kitaplar[i].isim, aranan) == 0) {
+            printf("\nKitap Bulundu:\n");
+            printf("İsim: %s\n", kitaplar[i].isim);
+            printf("Yazar: %s\n", kitaplar[i].yazar);
+            printf("Yayın Yılı: %d\n", kitaplar[i].yil);
+            printf("Durum: %s\n", kitaplar[i].mevcut ? "Mevcut" : "Odunc Verildi");
+            bulundu = 1;
+            break;
+        }
+    }
+
+    if (!bulundu) {
+        printf("\nKitap bulunamadı.\n");
+    }
+}
+
+void kitapOduncAl() {
+    char kitapIsmi[50];
+    printf("\nOdunc almak istediğiniz kitabın ismini girin: ");
+    scanf(" %[^
+]", kitapIsmi);
+
+    for (int i = 0; i < kitapSayisi; i++) {
+        if (strcmp(kitaplar[i].isim, kitapIsmi) == 0) {
+            if (kitaplar[i].mevcut) {
+                kitaplar[i].mevcut = 0;
+
+                printf("\nOdunc alma başarılı! Geri dönüş tarihi: 15/01/2025\n");
+
+                strcpy(oduncKitaplar[oduncSayisi].kitapIsmi, kitapIsmi);
+                strcpy(oduncKitaplar[oduncSayisi].geriDonusTarihi, "15/01/2025");
+                oduncSayisi++;
+                return;
+            } else {
+                printf("\nBu kitap zaten odunc verilmiş.\n");
+                return;
+            }
+        }
+    }
+    printf("\nKitap bulunamadı.\n");
+}
+
+void kitapIade() {
+    char kitapIsmi[50];
+    printf("\nIade etmek istediğiniz kitabın ismini girin: ");
+    scanf(" %[^
+]", kitapIsmi);
+
+    for (int i = 0; i < kitapSayisi; i++) {
+        if (strcmp(kitaplar[i].isim, kitapIsmi) == 0) {
+            if (!kitaplar[i].mevcut) {
+                kitaplar[i].mevcut = 1;
+                printf("\nKitap başarıyla iade edildi!\n");
+                return;
+            } else {
+                printf("\nBu kitap zaten mevcut durumda.\n");
+                return;
+            }
+        }
+    }
+    printf("\nKitap bulunamadı.\n");
+}
+
+void oduncKitaplariGoster() {
+    if (oduncSayisi == 0) {
+        printf("\nHenüz odunc aldığınız bir kitap yok.\n");
+        return;
+    }
+
+    printf("\nOdunc Aldığınız Kitaplar:\n");
+    for (int i = 0; i < oduncSayisi; i++) {
+        printf("Kitap: %s\n", oduncKitaplar[i].kitapIsmi);
+        printf("Geri Dönüş Tarihi: %s\n", oduncKitaplar[i].geriDonusTarihi);
+        printf("------------------\n");
+    }
+}
+
+void anaMenu() {
+    printf("\n=== Kütüphane Sistemi ===\n");
+    printf("1. Kitap Ekle\n");
+    printf("2. Kitapları Listele\n");
+    printf("3. Kitap Ara\n");
+    printf("4. Kitap Odunc Al\n");
+    printf("5. Kitap Iade Et\n");
+    printf("6. Odunc Aldığım Kitapları Göster\n");
+    printf("7. Çıkış\n");
+    printf("Seçiminizi yapınız: ");
+}
+
+void program() {
+    kitaplariYukle();
+    if (!yetkiliGirisi()) {
+        printf("\nGiriş başarısız. Program sonlandırılıyor.\n");
+        return;
+    }
+
+    int devam = 1;
+    while (devam) {
+        int secim;
+        anaMenu();
+        scanf("%d", &secim);
+
+        switch (secim) {
+            case 1:
+                kitapEkle();
+                break;
+            case 2:
+                kitaplariListele();
+                break;
+            case 3:
+                kitapAra();
+                break;
+            case 4:
+                kitapOduncAl();
+                break;
+            case 5:
+                kitapIade();
+                break;
+            case 6:
+                oduncKitaplariGoster();
+                break;
+            case 7:
+                printf("\nProgramdan çıkılıyor...\n");
+                kitaplariKaydet();
+                devam = 0;
+                break;
+            default:
+                printf("\nGeçersiz seçim. Lütfen tekrar deneyin.\n");
+                break;
+        }
+    }
+}
+
+int main() {
+    program();
+    return 0;
+}
